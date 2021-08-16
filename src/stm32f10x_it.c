@@ -38,6 +38,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 __IO uint32_t step = 1;
+extern uint16_t debug;
+extern int control_status;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -158,6 +160,33 @@ void TIM1_TRG_COM_IRQHandler(void)
 #endif	
 {
    
+}
+
+/**
+  * @brief  This function handles External line 0 interrupt request.
+	* Nhan nut nhan de doi trang thai dieu khien (co dieu khien/khong dieu khien)
+  * @param  None
+  * @retval None
+  */
+void EXTI1_IRQHandler(void)
+{
+  if(EXTI_GetITStatus(EXTI_Line1) != RESET)
+  {
+    /* ... */
+//		int i;
+//		for(i = 0; i<0xff; i++) {}
+//		debug++;
+//		if(control_status == 1) 
+//		{
+//			control_status = 0;
+//		}
+//		else	
+//		{
+//			control_status = 1;
+//		}
+    /* Clear the  EXTI line 0 pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line1);
+  }
 }
 
 /******************************************************************************/

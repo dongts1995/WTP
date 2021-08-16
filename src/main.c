@@ -27,6 +27,11 @@ TIM_BDTRInitTypeDef TIM_BDTRInitStructure;
 ADC_InitTypeDef ADC_InitStructure;
 DMA_InitTypeDef DMA_InitStructure;
 NVIC_InitTypeDef nvicConfig;
+EXTI_InitTypeDef   EXTI_InitStructure;
+GPIO_InitTypeDef   GPIO_InitStructure;	
+NVIC_InitTypeDef   NVIC_InitStructure;
+uint16_t debug = 0;
+uint16_t pri_debug = 0;
 
 
 __IO uint16_t ADC_Value[3];
@@ -58,9 +63,12 @@ void GPIO_Configuration(void);
 void SysTick_Configuration(void);
 void PhaseShift_Config(void);
 void ADC_DMA_Config(void);
+void EXTI0_Config(void);	     // extternal interupt
 void TimerInterrupt_Config(void);
 // TIM2 Interrupt Function
 void TIM2_IRQHandler(void);
+
+
 
 //void NVIC_Configuration(void);
 
@@ -81,6 +89,7 @@ int main(void)
   /* GPIO Configuration */
 	// A8, A9 -> Channel 1, 2 and  B13, B14 -> Channel 1N, 2N for phase_shift
 	// Config A0,A1,A2 for ADC
+	/* Configure PA.01 in input pull up */
   GPIO_Configuration();
 	
   /* SysTick Configuration */
@@ -105,6 +114,18 @@ int main(void)
 	
   while (1)
   {
+		if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_1)==0)
+			{
+				control_status = 1;
+				GPIO_SetBits(GPIOA, GPIO_Pin_2);
+			}
+		else if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_1)==1)
+			{
+				control_status = 0;
+				GPIO_ResetBits(GPIOA, GPIO_Pin_2);
+			}
+		
+			
 		if (i_control == 1)
 			{
 				i_control = 0;
@@ -136,7 +157,7 @@ int main(void)
 				{
 					teta = (uint16_t)uk;
 				}
-				else teta = 100;
+				else teta = 70;
 								
 				TIM_SetCompare2(TIM1,(180 - teta)*5);   // TIM_SetCompare2(TIM1,(180 - teta)*5);
 			}
@@ -145,7 +166,7 @@ int main(void)
 
 void RCC_Configuration(void)
 {  
-	// Config clock TIM1, GPIOA, GPIOB for phase_shift
+	// Config clock TIM1, GPIOA, GPIOB for phase_shift; GPIOA for Led
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 | RCC_APB2Periph_GPIOA |
                          RCC_APB2Periph_GPIOB |RCC_APB2Periph_AFIO, ENABLE);
 	
@@ -171,10 +192,23 @@ void GPIO_Configuration(void)
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;
   GPIO_Init(GPIOB, &GPIO_InitStructure);
 	
-	// Config A0,A1,A2 for ADC
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2;
+	// Config A0 for ADC
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
+	/* Configure PA.01 pin as input pull up */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;														// Pin_1 in PA01
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;								//
+  GPIO_Init(GPIOA, &GPIO_InitStructure);															// GPIOA in PA01
+	
+	// config A2 for led
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+  
+
 	
 }
 
@@ -182,6 +216,7 @@ void SysTick_Configuration(void)
 {
 
 }
+
 
 void PhaseShift_Config(void)
 {
